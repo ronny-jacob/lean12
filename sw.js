@@ -1,6 +1,6 @@
 // Network-first service worker: always fetches the newest version when online, falls back to cache offline.
 // To force an update after changing files, bump CACHE.
-var CACHE = 'lean12-v1';
+var CACHE = 'lean12-v2';
 var FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
