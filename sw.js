@@ -1,7 +1,13 @@
-// Network-first service worker: always fetches the newest version when online, falls back to cache offline.
-// To force an update after changing files, bump CACHE.
-var CACHE = 'lean12-v2';
+// Network-first with a 3-second timeout, then the cache. Keeps updates flowing when online
+// and never makes the app hang on a weak gym connection. Bump CACHE to force an update.
+var CACHE = 'lean12-v3';
 var FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+function withTimeout(ms, p) {
+  return new Promise(function (resolve, reject) {
+    var t = setTimeout(function () { reject(new Error('timeout')); }, ms);
+    p.then(function (v) { clearTimeout(t); resolve(v); }, function (e) { clearTimeout(t); reject(e); });
+  });
+}
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
 });
@@ -13,7 +19,7 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(fetch(req).then(function (res) {
+  e.respondWith(withTimeout(3000, fetch(req)).then(function (res) {
     var copy = res.clone();
     caches.open(CACHE).then(function (c) { c.put(req, copy); });
     return res;
